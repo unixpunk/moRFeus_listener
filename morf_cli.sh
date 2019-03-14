@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 
-morf_tool_dir=/home/pi/moRFeus_listener
+morf_tool_dir=/moRFeus_listener
+morf_tool=/bin/morfeus_tool_linux_armv7
 
 
 source $morf_tool_dir/get_status.sh
@@ -17,41 +18,39 @@ echo "
 moRFeus listener commands :
 -----------------------
 
-S : display status
-F 123456789  : set frequency to 123456789 Hz
-M [x] : switch to Mixer mode, power value = x
-G [x] : switch to Generator mode, power value = x
-P x : set Current value to x
-X or Q : disconnect
-KK : disconnect and KILL server
+S		: Show Status
+F 123456789	: Set Frequency (hz) = (85000000-5400000000)
+M [n]		: Mixer Mode [Power = (0-7)]
+G [n]		: Generator Mode [Power = (0-7)]
+P n 		: Power = (0-7)
+Q or X		: Disconnect
+KK		: Kill Server
 "
 
 get_status
 
-#while true; do
 
 while :
 do
 command=""
 freq=""
-#morf_com=""
 arg1=""
 power=""
 mode=""
 
-read -e -r morf_com
+read -r morf_com
 
 
 command=$(echo $morf_com | awk '{print $1}')
 arg1=$(echo $morf_com | awk '{print $2}')
 arg1=${arg1//[![:digit:]]}
 
-power=$(sudo $morf_tool_dir/morfeus_tool getCurrent)
+power=$($morf_tool getCurrent)
 
 case $command in
 	[Ff]) echo "    **** setFrequency $arg1"
 		if [ -z "$arg1" ]; then arg1=""; fi
-		sudo $morf_tool_dir/morfeus_tool setFrequency $((arg1)); arg1=""
+		$morf_tool setFrequency $((arg1)); arg1=""
 		get_status;
 		;;
 	[XxQq]) echo "       **** DISCONNECT "
@@ -61,24 +60,24 @@ case $command in
 	[Ss]) get_status;
 		;;
 	KK) echo "Disconnect and kill server - Goodbye forever !"
-		sudo killall socat
+		killall socat
 		exit 0;
 		;;
 	[Mm]) if [ -z "$arg1" ]; then arg1=$power; fi
 		echo "    **** set Mixer mode  - Power $arg1"
-		sudo $morf_tool_dir/morfeus_tool Mixer
-		sudo $morf_tool_dir/morfeus_tool setCurrent $((arg1))
+		$morf_tool Mixer
+		$morf_tool setCurrent $((arg1))
 		get_status;
 		;;
 	[Pp]) if [ -z "$arg1" ]; then arg1=$power; fi
 		echo "    **** set Current  - Power $arg1"
-		sudo $morf_tool_dir/morfeus_tool setCurrent $((arg1))
+		$morf_tool setCurrent $((arg1))
 		get_status;
 		;;
 	[Gg]) if [ -z "$arg1" ]; then arg1=$power; fi
 		echo "    **** set Generator mode  - Power $arg1"
-		sudo $morf_tool_dir/morfeus_tool Generator
-		sudo $morf_tool_dir/morfeus_tool setCurrent $((arg1))
+		$morf_tool Generator
+		$morf_tool setCurrent $((arg1))
 		get_status;
 		;;
 	*) command=""
